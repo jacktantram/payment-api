@@ -61,3 +61,6 @@ Notes
 
 
 ## Improvements
+* Protobuf
+  * CI - Responsible for protobuf generation to ensure no compatibility/versioning issues across machines.
+  * `WIRE_JSON` - In order to share the protobuf schemas and avoid duplication I added the WIRE_JSON check. This was to avoid writing extra mapping functions. However by doing this it stops the rpc/internal formats to be able to benefit from WIRE changes.

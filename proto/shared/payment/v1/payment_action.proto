@@ -1,6 +1,6 @@
 syntax = "proto3";
 package shared.payment.v1;
-option go_package = "github.com/jacktantram/build/go/shared/payment/v1";
+option go_package = "github.com/jacktantram/payments-api/build/go/shared/payment/v1";
 
 import "shared/amount/v1/money.proto";
 import "google/protobuf/timestamp.proto";

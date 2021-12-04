@@ -1,6 +1,6 @@
 syntax = "proto3";
 package shared.payment.v1;
-option go_package = "github.com/jacktantram/build/go/shared/payment/v1";
+option go_package = "github.com/jacktantram/payments-api/build/go/shared/payment/v1";
 
 import "shared/amount/v1/money.proto";
 import "google/protobuf/timestamp.proto";
@@ -16,17 +16,12 @@ message Payment{
   shared.amount.v1.Money amount = 2;
   // The status of the payment/
   PaymentStatus payment_status = 3;
-  // The payment will be linked to one kind of payment method
-  oneof payment_method{
-    // card payment method type
-    shared.payment.v1.PaymentMethodCard card =4;
-  }
-  // The linking action id to the payment. See PaymentAction
-  string action_id = 5;
+  // The linking action id to the payment. See PaymentAction.
+  string action_id = 4;
   // The date the payment was created.
-  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp created_at = 5;
   // The date the payment was updated.
-  google.protobuf.Timestamp updated_at = 7;
+  google.protobuf.Timestamp updated_at = 6;
 }
 
 

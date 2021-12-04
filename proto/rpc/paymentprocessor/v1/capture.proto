@@ -1,0 +1,22 @@
+syntax = "proto3";
+package rpc.paymentprocessor.v1;
+option go_package = "github.com/jacktantram/build/go/rpc/paymentprocessor/v1";
+
+
+import "shared/amount/v1/money.proto";
+import "shared/payment/v1/payment.proto";
+
+
+// Request used to create a capture on a payment.
+message CreateCaptureRequest{
+    // The ID returned in the authorization request.
+    string payment_id = 1;
+    // The amount to capture against the payment method.
+    shared.amount.v1.Money amount = 2;
+}
+
+// Response returned from a successful capture.
+message CreateCaptureResponse{
+    // the updated payment.
+    shared.payment.v1.Payment payment= 1;
+}

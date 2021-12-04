@@ -1,6 +1,6 @@
 syntax = "proto3";
 package shared.amount.v1;
-option go_package = "github.com/jacktantram/build/go/shared/amount/v1";
+option go_package = "github.com/jacktantram/payments-api/build/go/shared/amount/v1";
 
 // Represents an amount that is represented as money.
 message Money{

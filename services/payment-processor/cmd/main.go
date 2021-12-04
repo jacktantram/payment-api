@@ -3,16 +3,15 @@ package main
 import (
 	"context"
 	"github.com/jacktantram/payments-api/pkg/driver/v1/config"
-	"github.com/jacktantram/payments-api/services/payment-gateway/internal/transporthttp"
+	"github.com/jacktantram/payments-api/services/payment-processor/internal/transportgrpc"
 	log "github.com/sirupsen/logrus"
-	"net/http"
+	"net"
 	"os"
 	"os/signal"
-	"time"
 )
 
 const (
-	serviceName = "payment-gateway"
+	serviceName = "payment-processor"
 )
 
 // Cfg represents the services config
@@ -40,18 +39,12 @@ func main(){
 		log.WithError(err).Fatalf("unable to load config")
 	}
 
-	handler, err:= transporthttp.NewHandler()
-	if err!=nil{
-		log.WithError(err).Fatalf("unable to setup handler")
+	lis, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		log.Fatalln("Failed to listen:", err)
 	}
-
-	srv := &http.Server{
-		Handler:      transporthttp.HandleRoutes(handler),
-		Addr:         ":8080",
-		WriteTimeout: time.Duration(cfg.WriteTimeout) * time.Second,
-		ReadTimeout: time.Duration(cfg.ReadTimeout) * time.Second,
-	}
-	if err=srv.ListenAndServe();err!=nil{
-		log.WithError(err).Fatal("unable to listen and serve")
+	s:=transportgrpc.NewServer()
+	if err:=s.Serve(lis);err!=nil{
+		log.WithError(err).Fatal("service shutting down")
 	}
 }
