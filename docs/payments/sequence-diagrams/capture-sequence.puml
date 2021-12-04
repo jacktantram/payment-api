@@ -1,0 +1,75 @@
+@startuml
+Title Capture Sequence Diagram
+
+skinparam ParticipantPadding 20
+skinparam BoxPadding 20
+actor merchant
+
+participant paymentGateway as "payment-gateway"
+
+box "Payment Processor"
+participant paymentProcessor as "payment-processor"
+database payments as paymentsDB
+end box
+participant issuerGateway as "issuer-gateway"
+
+merchant-> paymentGateway: Capture
+paymentGateway->paymentGateway: validate request
+alt invalid request
+paymentGateway->merchant: return BadRequest
+end alt
+
+paymentGateway-> paymentProcessor: Capture
+paymentProcessor->paymentsDB: GetPayment by ID + actions
+alt Payment Not Found
+paymentProcessor<-paymentsDB: return no record
+paymentGateway<-paymentProcessor: return NotFound
+paymentGateway->merchant: return status 404 (NotFound)
+end alt
+alt DB Error
+paymentProcessor<-paymentsDB: return internal error
+paymentGateway<-paymentProcessor: return InternalError
+paymentGateway->merchant: return status 500 (InternalServerError)
+end alt
+paymentProcessor<-paymentsDB: return payment record
+paymentProcessor->paymentProcessor: validate capture against auth
+alt Capture exceeds auth amount + existing capture amount/ Payment Refunded/ Voided
+ paymentGateway<-paymentProcessor: Return FAILED_PRECONDITION
+ paymentGateway->merchant: return status 422 (UnprocessableEntity)
+end alt
+
+paymentProcessor-> paymentsDB: Create pending capture action
+alt DB Write Fails
+paymentProcessor<-paymentsDB: return error
+paymentGateway<-paymentProcessor: return InternalError
+paymentGateway->merchant: return InternalError
+end
+paymentProcessor<-paymentsDB: return ok
+
+paymentProcessor-> issuerGateway: CreateIssuerRequest - Capture
+alt Issuer error
+paymentProcessor<-issuerGateway: Internal error/ unhandled error
+paymentProcessor->paymentsDB: Update Action to Declined depending on issuer response
+alt DB Write fails
+paymentProcessor<-paymentsDB: return error
+paymentProcessor->paymentProcessor: log error (trigger alert)
+paymentGateway<-paymentProcessor: return InternalError
+paymentGateway->merchant: return InternalError
+end alt
+paymentProcessor<-paymentsDB: Return ok
+paymentGateway<-paymentProcessor: return InternalError
+paymentGateway->merchant: return InternalError
+end alt
+paymentProcessor<-issuerGateway: Return ok
+paymentProcessor->paymentsDB: Update Action to Declined depending on issuer response
+alt DB Write Fails
+paymentProcessor<-paymentsDB: return error
+paymentProcessor->paymentProcessor: log error (trigger alert)
+paymentGateway<-paymentProcessor: return Accepted
+paymentGateway->merchant: return 201
+end alt
+paymentProcessor<-paymentsDB: Return ok
+paymentGateway<-paymentProcessor: Return ok
+paymentGateway->merchant: Return 201
+
+@enduml

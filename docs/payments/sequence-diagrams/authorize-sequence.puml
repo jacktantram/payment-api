@@ -1,0 +1,54 @@
+@startuml
+Title Authorize Sequence Diagram
+
+skinparam ParticipantPadding 20
+skinparam BoxPadding 20
+actor merchant
+
+participant paymentGateway as "payment-gateway"
+
+box "Payment Processor"
+participant paymentProcessor as "payment-processor"
+database payments as paymentsDB
+end box
+participant issuerGateway as "issuer-gateway"
+
+merchant-> paymentGateway: Authorize
+paymentGateway->paymentGateway: validate request
+alt invalid request
+paymentGateway->merchant: return BadRequest
+end alt
+paymentGateway-> paymentProcessor: Authorize
+paymentProcessor->paymentsDB: Create Pending Authorization
+alt creation fails
+paymentProcessor<-paymentsDB: return error
+paymentProcessor->paymentGateway: Return Internal error
+paymentGateway->merchant: Return Internal error
+end alt
+paymentProcessor<-paymentsDB: Return OK
+paymentProcessor-> issuerGateway: CreateIssuerRequest
+alt Issuer error
+paymentProcessor<-issuerGateway: Internal error/ unhandled error
+paymentProcessor->paymentsDB: Update Payment to Authorized/Declined depending on issuer response
+alt DB Write fails
+paymentProcessor<-paymentsDB: return error
+paymentProcessor->paymentProcessor: log error (trigger alert)
+paymentGateway<-paymentProcessor: return InternalError
+paymentGateway->merchant: return InternalError
+end alt
+paymentProcessor<-paymentsDB: Return ok
+paymentGateway<-paymentProcessor: return InternalError
+paymentGateway->merchant: return InternalError
+end alt
+paymentProcessor<-issuerGateway: Return ok
+paymentProcessor->paymentsDB: Update Payment to Authorized/Declined depending on issuer response
+alt DB Write Fails
+paymentProcessor<-paymentsDB: return error
+paymentProcessor->paymentProcessor: log error (trigger alert)
+paymentGateway<-paymentProcessor: return Accepted
+paymentGateway->merchant: return 201
+end alt
+paymentProcessor<-paymentsDB: Return ok
+paymentGateway<-paymentProcessor: Return ok
+paymentGateway->merchant: Return 201
+@enduml
