@@ -1,0 +1,34 @@
+syntax = "proto3";
+package shared.payment.v1;
+option go_package = "github.com/jacktantram/build/go/shared/payment/v1";
+
+import "shared/amount/v1/money.proto";
+import "google/protobuf/timestamp.proto";
+
+// The action made towards a payment
+message PaymentAction{
+  // payment action id
+  string id = 1;
+  // The payment action amount.
+  shared.amount.v1.Money amount = 2;
+  // The payment type associated to the action.
+  PaymentType payment_type = 3;
+  // ISO-1987 response code
+  string response_code = 4;
+  // The time in which the action was created.
+  google.protobuf.Timestamp created_at = 5;
+  // The time in which the action was successfully processed.
+  google.protobuf.Timestamp processed_at = 6;
+}
+
+// The type of the payment.
+enum PaymentType{
+    // The payment type is unspecified. This should not happen.
+    PAYMENT_TYPE_UNSPECIFIED = 0;
+    // The payment type is a capture type
+    PAYMENT_TYPE_CAPTURE = 1;
+    // The payment type is a refund type
+    PAYMENT_TYPE_REFUND= 2;
+    // The payment type is a void type
+    PAYMENT_TYPE_VOID= 3;
+}

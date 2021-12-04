@@ -1,0 +1,3 @@
+syntax = "proto3";
+package rpc.paymentprocessor.v1;
+option go_package = "github.com/jacktantram/build/go/rpc/paymentprocessor/v1";

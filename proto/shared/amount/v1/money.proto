@@ -1,0 +1,11 @@
+syntax = "proto3";
+package shared.amount.v1;
+option go_package = "github.com/jacktantram/build/go/shared/amount/v1";
+
+// Represents an amount that is represented as money.
+message Money{
+  // minor units represents the financial amount in minor units. i.e. £20.30 = 2030 (exponent -2)
+  uint64 minor_units = 1;
+  // currency represents the ISO-4217 currency code (i.e. GBP)
+  string currency = 2;
+}

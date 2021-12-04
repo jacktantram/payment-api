@@ -1,0 +1,14 @@
+syntax = "proto3";
+package shared.payment.v1;
+option go_package = "github.com/jacktantram/build/go/shared/payment/v1";
+
+
+// Represents a card payment method
+message PaymentMethodCard{
+  // Represents the first six digits of the card number
+  string first_six = 1;
+  // Represents the last four digits of the card number.
+  string last_four = 2;
+
+}
+

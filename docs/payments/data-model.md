@@ -27,7 +27,7 @@ A payment object represents a payment at the current point in time.
 `PaymentAction` 
 * `ID` - Unique identifier for the action
 * `Amount` - amount performed on action in minor units
-* `Currency` - ISO 4217  currency code
+* `Currency` - `ISO 4217`  currency code
 * `PaymentType` - Type of action made towards payment
   * `Authorization` - Payment has been authorized (should always be present as the first action if a payment is authorized)
   * `Capture` - A capture request was made against the payment
