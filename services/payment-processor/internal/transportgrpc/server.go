@@ -7,8 +7,7 @@ import (
 	paymentprocessorv1 "github.com/jacktantram/payments-api/build/go/rpc/paymentprocessor/v1"
 )
 
-
-type Server struct{
+type Server struct {
 	paymentprocessorv1.UnimplementedPaymentProcessorServer
 }
 
@@ -20,10 +19,10 @@ func NewServer() *grpc.Server {
 	return s
 }
 
-
 func (s Server) CreatePayment(ctx context.Context, request *paymentprocessorv1.CreatePaymentRequest) (*paymentprocessorv1.CreatePaymentResponse, error) {
 	//TODO implement me
-	panic("implement me")
+	request.
+		panic("implement me")
 }
 
 func (s Server) Capture(ctx context.Context, request *paymentprocessorv1.CreateCaptureRequest) (*paymentprocessorv1.CreateCaptureResponse, error) {

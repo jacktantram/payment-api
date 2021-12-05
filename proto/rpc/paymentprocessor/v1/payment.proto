@@ -11,29 +11,29 @@ import "shared/payment/v1/payment.proto";
 
 // Request used to create a payment.
 message CreatePaymentRequest{
-    // The amount to authorize against the payment method.
-    shared.amount.v1.Money amount = 1;
-    // The payment will be linked to one kind of payment method
-    oneof payment_method{
-        // card payment method type for authorization
-        shared.payment.v1.PaymentMethodCard card =4;
-    }
+  // The amount to authorize against the payment method.
+  shared.amount.v1.Money amount = 1;
+  // The payment will be linked to one kind of payment method
+  oneof payment_method{
+    // card payment method type for authorization
+    shared.payment.v1.PaymentMethodCard card = 4;
+  }
 }
 // Response returned from a successful payment creation.
 message CreatePaymentResponse{
-    // the payment created with the create payment request
-    shared.payment.v1.Payment payment= 1;
+  // the payment created with the create payment request
+  shared.payment.v1.Payment payment = 1;
 }
 
 
 // Request used to create a Refund on a payment method.
 message GetPaymentRequest{
-    // The ID to get the payment.
-    string payment_id = 1;
+  // The ID to get the payment.
+  string payment_id = 1;
 }
 
 // Returned payment
 message GetPaymentResponse{
-    // the specified payment.
-    shared.payment.v1.Payment payment= 1;
+  // the specified payment.
+  shared.payment.v1.Payment payment = 1;
 }

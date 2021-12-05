@@ -5,20 +5,25 @@ import (
 	paymentsV1 "github.com/jacktantram/payments-api/build/go/shared/payment/v1"
 )
 
+// CreateAuthorizationRequest is the request used to create an authorization
 type CreateAuthorizationRequest struct {
 	Card   *paymentsV1.PaymentMethodCard
-	Amount amountV1.Money
+	Amount *amountV1.Money
 }
 
-type CreatePaymentResponse struct {
-	Payment *paymentsV1.Payment
-}
-
+// CreateCaptureRequest  is the request used to perform a capture towards a payment.
 type CreateCaptureRequest struct {
-	ID     string `json:"payment_id"`
-	Amount amountV1.Money
+	PaymentID string `json:"payment_id"`
+	Amount    uint64 `json:"amount"`
 }
 
-type CreateCaptureResponse struct {
-	Payment *paymentsV1.Payment
+// CreateRefundRequest is the request used to create a refund towards a payment
+type CreateRefundRequest struct {
+	PaymentID string `json:"payment_id"`
+	Amount    uint64 `json:"amount"`
+}
+
+// CreateVoidRequest is the request used to void a payment.
+type CreateVoidRequest struct {
+	PaymentID string `json:"payment_id"`
 }

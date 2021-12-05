@@ -67,5 +67,7 @@ Notes
     * `WIRE_JSON` - In order to share the protobuf schemas and avoid duplication I added the WIRE_JSON check. This was
       to avoid writing extra mapping functions. However by doing this it stops the rpc/internal formats to be able to
       benefit from WIRE changes.
+* Database
+    * If more time would have written table driven tests to tidy up tests.
 
 https://app.diagrams.net/#G16LSiTc8i5i_N0f7TDqM6yrpQrAbg5AdF

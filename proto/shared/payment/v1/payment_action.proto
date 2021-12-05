@@ -23,12 +23,14 @@ message PaymentAction{
 
 // The type of the payment.
 enum PaymentType{
-    // The payment type is unspecified. This should not happen.
-    PAYMENT_TYPE_UNSPECIFIED = 0;
-    // The payment type is a capture type
-    PAYMENT_TYPE_CAPTURE = 1;
-    // The payment type is a refund type
-    PAYMENT_TYPE_REFUND= 2;
-    // The payment type is a void type
-    PAYMENT_TYPE_VOID= 3;
+  // The payment type is unspecified. This should not happen.
+  PAYMENT_TYPE_UNSPECIFIED = 0;
+  // The payment type is an authorization type.
+  PAYMENT_TYPE_AUTHORIZATION = 1;
+  // The payment type is a capture type
+  PAYMENT_TYPE_CAPTURE = 2;
+  // The payment type is a refund type
+  PAYMENT_TYPE_REFUND = 3;
+  // The payment type is a void type
+  PAYMENT_TYPE_VOID = 4;
 }

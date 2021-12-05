@@ -12,7 +12,8 @@ message CreateCaptureRequest{
   // The ID returned in the authorization request.
   string payment_id = 1;
   // The amount to capture against the payment method.
-  shared.amount.v1.Money amount = 2;
+  // It will match the authorization currency.
+  uint64 amount = 2;
 }
 
 // Response returned from a successful capture.
