@@ -10,24 +10,37 @@ import (
 
 var (
 	ErrPaymentCreateActionDoesNotExist = errors.New("action does not exist to create payment with")
+
+	// could add different errors for amount too high
+	ErrInvalidAmount = errors.New("amount is invalid")
+	ErrUnprocessable = errors.New("unprocessable entity")
+
+	ErrUpdatePaymentOutcome = errors.New("unable to update payment outcome")
+
+	ErrNoPayment = errors.New("no payment found")
 )
 
 type PaymentAction struct {
-	ID          uuid.UUID    `db:"id"`
-	Amount      int64        `db:"amount"`
-	PaymentType PaymentType  `db:"payment_type"`
-	CreatedAt   time.Time    `db:"created_at"`
-	ProcessedAt sql.NullTime `db:"updated_at"`
+	ID           uuid.UUID    `db:"id"`
+	Amount       int64        `db:"amount"`
+	PaymentType  PaymentType  `db:"payment_type"`
+	ResponseCode string       `db:"response_code"`
+	CreatedAt    time.Time    `db:"created_at"`
+	ProcessedAt  sql.NullTime `db:"processed_at"`
 }
 
 type Payment struct {
-	ID          uuid.UUID     `db:"id"`
-	Amount      int64         `db:"amount"`
-	Currency    string        `db:"currency"`
-	Status      PaymentStatus `db:"status"`
-	ActionID    uuid.UUID     `db:"action_id"`
-	CreatedAt   time.Time     `db:"created_at"`
-	ProcessedAt sql.NullTime  `db:"updated_at"`
+	ID        uuid.UUID     `db:"id"`
+	Amount    int64         `db:"amount"`
+	Currency  string        `db:"currency"`
+	Status    PaymentStatus `db:"status"`
+	ActionID  uuid.UUID     `db:"action_id"`
+	CreatedAt time.Time     `db:"created_at"`
+	UpdatedAt sql.NullTime  `db:"updated_at"`
+}
+
+type PaymentMethod struct {
+	Card *paymentsV1.PaymentMethodCard
 }
 
 type PaymentStatus string
@@ -64,6 +77,26 @@ func (p *PaymentStatus) FromProto(paymentStatus paymentsV1.PaymentStatus) error 
 	return nil
 }
 
+func (p PaymentStatus) ToProto() paymentsV1.PaymentStatus {
+	switch p {
+	case PaymentStatusPending:
+		return paymentsV1.PaymentStatus_PAYMENT_STATUS_PENDING
+	case PaymentStatusAuthorized:
+		return paymentsV1.PaymentStatus_PAYMENT_STATUS_AUTHORIZED
+	case PaymentStatusPartiallyCaptured:
+		return paymentsV1.PaymentStatus_PAYMENT_STATUS_PARTIALLY_CAPTURED
+	case PaymentStatusCaptured:
+		return paymentsV1.PaymentStatus_PAYMENT_STATUS_CAPTURED
+	case PaymentStatusPartiallyRefunded:
+		return paymentsV1.PaymentStatus_PAYMENT_STATUS_PARTIALLY_REFUNDED
+	case PaymentStatusRefunded:
+		return paymentsV1.PaymentStatus_PAYMENT_STATUS_REFUNDED
+	case PaymentStatusVoided:
+		return paymentsV1.PaymentStatus_PAYMENT_STATUS_VOIDED
+	}
+	return paymentsV1.PaymentStatus_PAYMENT_STATUS_UNSPECIFIED
+}
+
 type PaymentType string
 
 const (
@@ -87,4 +120,19 @@ func (p *PaymentType) FromProto(paymentType paymentsV1.PaymentType) error {
 		return errors.New("unknown")
 	}
 	return nil
+}
+
+func (p PaymentType) ToProto() paymentsV1.PaymentType {
+	switch p {
+	case PaymentTypeAuthorization:
+		return paymentsV1.PaymentType_PAYMENT_TYPE_AUTHORIZATION
+	case PaymentTypeCapture:
+		return paymentsV1.PaymentType_PAYMENT_TYPE_CAPTURE
+	case PaymentTypeRefund:
+		return paymentsV1.PaymentType_PAYMENT_TYPE_REFUND
+	case PaymentTypeVoid:
+		return paymentsV1.PaymentType_PAYMENT_TYPE_VOID
+	default:
+		return paymentsV1.PaymentType_PAYMENT_TYPE_UNSPECIFIED
+	}
 }

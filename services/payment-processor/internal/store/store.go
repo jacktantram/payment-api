@@ -11,11 +11,9 @@ type Store struct {
 	db postgres.Client
 }
 
-const (
-	uniqueConstaintViolationCode = "23505"
-)
-
 type conn interface {
+	QueryRowxContext(ctx context.Context, query string, args ...interface{}) *sqlx.Row
+	Queryx(query string, args ...interface{}) (*sqlx.Rows, error)
 	NamedQueryContext(ctx context.Context, query string, arg interface{}) (*sqlx.Rows, error)
 	NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error)
 }

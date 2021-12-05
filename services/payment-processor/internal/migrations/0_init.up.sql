@@ -5,11 +5,12 @@ CREATE EXTENSION "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS payment_action
 (
-    id           UUID UNIQUE DEFAULT uuid_generate_v4(),
-    amount       int          NOT NULL,
-    payment_type payment_type NOT NULL,
-    created_at   timestamptz default now(),
-    processed_at timestamptz
+    id            UUID UNIQUE DEFAULT uuid_generate_v4(),
+    amount        int          NOT NULL,
+    payment_type  payment_type NOT NULL,
+    response_code VARCHAR(4),
+    created_at    timestamptz default now(),
+    processed_at  timestamptz
 );
 
 CREATE TABLE IF NOT EXISTS payment

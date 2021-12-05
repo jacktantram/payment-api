@@ -43,4 +43,6 @@ enum PaymentStatus {
   PAYMENT_STATUS_REFUNDED = 6;
   // The payment has been voided.
   PAYMENT_STATUS_VOIDED = 7;
+  // The payment was never authorized and declined.
+  PAYMENT_STATUS_DECLINED = 8;
 }

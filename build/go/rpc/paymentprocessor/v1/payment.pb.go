@@ -22,6 +22,53 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Denotes the fields that can be updated for payments.
+type UpdatePaymentField int32
+
+const (
+	UpdatePaymentField_UPDATE_PAYMENT_FIELD_UNSPECIFIED UpdatePaymentField = 0
+	UpdatePaymentField_UPDATE_PAYMENT_FIELD_STATUS      UpdatePaymentField = 1
+)
+
+// Enum value maps for UpdatePaymentField.
+var (
+	UpdatePaymentField_name = map[int32]string{
+		0: "UPDATE_PAYMENT_FIELD_UNSPECIFIED",
+		1: "UPDATE_PAYMENT_FIELD_STATUS",
+	}
+	UpdatePaymentField_value = map[string]int32{
+		"UPDATE_PAYMENT_FIELD_UNSPECIFIED": 0,
+		"UPDATE_PAYMENT_FIELD_STATUS":      1,
+	}
+)
+
+func (x UpdatePaymentField) Enum() *UpdatePaymentField {
+	p := new(UpdatePaymentField)
+	*p = x
+	return p
+}
+
+func (x UpdatePaymentField) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (UpdatePaymentField) Descriptor() protoreflect.EnumDescriptor {
+	return file_rpc_paymentprocessor_v1_payment_proto_enumTypes[0].Descriptor()
+}
+
+func (UpdatePaymentField) Type() protoreflect.EnumType {
+	return &file_rpc_paymentprocessor_v1_payment_proto_enumTypes[0]
+}
+
+func (x UpdatePaymentField) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use UpdatePaymentField.Descriptor instead.
+func (UpdatePaymentField) EnumDescriptor() ([]byte, []int) {
+	return file_rpc_paymentprocessor_v1_payment_proto_rawDescGZIP(), []int{0}
+}
+
 // Request used to create a payment.
 type CreatePaymentRequest struct {
 	state         protoimpl.MessageState
@@ -283,12 +330,17 @@ var file_rpc_paymentprocessor_v1_payment_proto_rawDesc = []byte{
 	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x34, 0x0a, 0x07, 0x70, 0x61, 0x79, 0x6d,
 	0x65, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x73, 0x68, 0x61, 0x72,
 	0x65, 0x64, 0x2e, 0x70, 0x61, 0x79, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61,
-	0x79, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x07, 0x70, 0x61, 0x79, 0x6d, 0x65, 0x6e, 0x74, 0x42, 0x39,
-	0x5a, 0x37, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6a, 0x61, 0x63,
-	0x6b, 0x74, 0x61, 0x6e, 0x74, 0x72, 0x61, 0x6d, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x2f, 0x67,
-	0x6f, 0x2f, 0x72, 0x70, 0x63, 0x2f, 0x70, 0x61, 0x79, 0x6d, 0x65, 0x6e, 0x74, 0x70, 0x72, 0x6f,
-	0x63, 0x65, 0x73, 0x73, 0x6f, 0x72, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x79, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x07, 0x70, 0x61, 0x79, 0x6d, 0x65, 0x6e, 0x74, 0x2a, 0x5b,
+	0x0a, 0x12, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x79, 0x6d, 0x65, 0x6e, 0x74, 0x46,
+	0x69, 0x65, 0x6c, 0x64, 0x12, 0x24, 0x0a, 0x20, 0x55, 0x50, 0x44, 0x41, 0x54, 0x45, 0x5f, 0x50,
+	0x41, 0x59, 0x4d, 0x45, 0x4e, 0x54, 0x5f, 0x46, 0x49, 0x45, 0x4c, 0x44, 0x5f, 0x55, 0x4e, 0x53,
+	0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x1f, 0x0a, 0x1b, 0x55, 0x50,
+	0x44, 0x41, 0x54, 0x45, 0x5f, 0x50, 0x41, 0x59, 0x4d, 0x45, 0x4e, 0x54, 0x5f, 0x46, 0x49, 0x45,
+	0x4c, 0x44, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x10, 0x01, 0x42, 0x39, 0x5a, 0x37, 0x67,
+	0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6a, 0x61, 0x63, 0x6b, 0x74, 0x61,
+	0x6e, 0x74, 0x72, 0x61, 0x6d, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x2f, 0x67, 0x6f, 0x2f, 0x72,
+	0x70, 0x63, 0x2f, 0x70, 0x61, 0x79, 0x6d, 0x65, 0x6e, 0x74, 0x70, 0x72, 0x6f, 0x63, 0x65, 0x73,
+	0x73, 0x6f, 0x72, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -303,21 +355,23 @@ func file_rpc_paymentprocessor_v1_payment_proto_rawDescGZIP() []byte {
 	return file_rpc_paymentprocessor_v1_payment_proto_rawDescData
 }
 
+var file_rpc_paymentprocessor_v1_payment_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_rpc_paymentprocessor_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_rpc_paymentprocessor_v1_payment_proto_goTypes = []interface{}{
-	(*CreatePaymentRequest)(nil),  // 0: rpc.paymentprocessor.v1.CreatePaymentRequest
-	(*CreatePaymentResponse)(nil), // 1: rpc.paymentprocessor.v1.CreatePaymentResponse
-	(*GetPaymentRequest)(nil),     // 2: rpc.paymentprocessor.v1.GetPaymentRequest
-	(*GetPaymentResponse)(nil),    // 3: rpc.paymentprocessor.v1.GetPaymentResponse
-	(*v1.Money)(nil),              // 4: shared.amount.v1.Money
-	(*v11.PaymentMethodCard)(nil), // 5: shared.payment.v1.PaymentMethodCard
-	(*v11.Payment)(nil),           // 6: shared.payment.v1.Payment
+	(UpdatePaymentField)(0),       // 0: rpc.paymentprocessor.v1.UpdatePaymentField
+	(*CreatePaymentRequest)(nil),  // 1: rpc.paymentprocessor.v1.CreatePaymentRequest
+	(*CreatePaymentResponse)(nil), // 2: rpc.paymentprocessor.v1.CreatePaymentResponse
+	(*GetPaymentRequest)(nil),     // 3: rpc.paymentprocessor.v1.GetPaymentRequest
+	(*GetPaymentResponse)(nil),    // 4: rpc.paymentprocessor.v1.GetPaymentResponse
+	(*v1.Money)(nil),              // 5: shared.amount.v1.Money
+	(*v11.PaymentMethodCard)(nil), // 6: shared.payment.v1.PaymentMethodCard
+	(*v11.Payment)(nil),           // 7: shared.payment.v1.Payment
 }
 var file_rpc_paymentprocessor_v1_payment_proto_depIdxs = []int32{
-	4, // 0: rpc.paymentprocessor.v1.CreatePaymentRequest.amount:type_name -> shared.amount.v1.Money
-	5, // 1: rpc.paymentprocessor.v1.CreatePaymentRequest.card:type_name -> shared.payment.v1.PaymentMethodCard
-	6, // 2: rpc.paymentprocessor.v1.CreatePaymentResponse.payment:type_name -> shared.payment.v1.Payment
-	6, // 3: rpc.paymentprocessor.v1.GetPaymentResponse.payment:type_name -> shared.payment.v1.Payment
+	5, // 0: rpc.paymentprocessor.v1.CreatePaymentRequest.amount:type_name -> shared.amount.v1.Money
+	6, // 1: rpc.paymentprocessor.v1.CreatePaymentRequest.card:type_name -> shared.payment.v1.PaymentMethodCard
+	7, // 2: rpc.paymentprocessor.v1.CreatePaymentResponse.payment:type_name -> shared.payment.v1.Payment
+	7, // 3: rpc.paymentprocessor.v1.GetPaymentResponse.payment:type_name -> shared.payment.v1.Payment
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
@@ -388,13 +442,14 @@ func file_rpc_paymentprocessor_v1_payment_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_rpc_paymentprocessor_v1_payment_proto_rawDesc,
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_rpc_paymentprocessor_v1_payment_proto_goTypes,
 		DependencyIndexes: file_rpc_paymentprocessor_v1_payment_proto_depIdxs,
+		EnumInfos:         file_rpc_paymentprocessor_v1_payment_proto_enumTypes,
 		MessageInfos:      file_rpc_paymentprocessor_v1_payment_proto_msgTypes,
 	}.Build()
 	File_rpc_paymentprocessor_v1_payment_proto = out.File
