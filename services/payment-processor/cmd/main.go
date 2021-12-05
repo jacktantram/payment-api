@@ -19,7 +19,7 @@ type Cfg struct {
 	config.HTTPConfig
 }
 
-func main(){
+func main() {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	c := make(chan os.Signal, 1)
@@ -43,8 +43,8 @@ func main(){
 	if err != nil {
 		log.Fatalln("Failed to listen:", err)
 	}
-	s:=transportgrpc.NewServer()
-	if err:=s.Serve(lis);err!=nil{
+	s := transportgrpc.NewServer()
+	if err := s.Serve(lis); err != nil {
 		log.WithError(err).Fatal("service shutting down")
 	}
 }

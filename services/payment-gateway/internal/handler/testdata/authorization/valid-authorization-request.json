@@ -1,0 +1,14 @@
+{
+  "amount": {
+    "minor_units": 2212,
+    "currency": "GBP"
+  },
+  "card": {
+    "card_number": "4000 0000 0000 0119",
+    "expiry": {
+      "month": 12,
+      "year": 2029
+    },
+    "cvv": "123"
+  }
+}

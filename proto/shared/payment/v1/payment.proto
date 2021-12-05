@@ -28,9 +28,11 @@ message Payment{
 // Represents the current status of the payment.
 enum PaymentStatus {
   // If the payment status is not provided.
-  PAYMENT_STATUS_UNSPECIFIED= 0;
+  PAYMENT_STATUS_UNSPECIFIED = 0;
   // The payment is in a pending status.
   PAYMENT_STATUS_PENDING = 1;
+  // The payment has been authorized.
+  PAYMENT_STATUS_AUTHORIZED = 2;
   // The payment is currently partially captured.
   PAYMENT_STATUS_PARTIALLY_CAPTURED = 3;
   // The payment has been completely captured.
