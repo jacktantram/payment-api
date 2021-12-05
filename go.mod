@@ -10,6 +10,7 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/objx v0.2.0 // indirect
+	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20211013171255-e13a2654a71e // indirect
 	google.golang.org/grpc v1.42.0
 	google.golang.org/protobuf v1.27.1

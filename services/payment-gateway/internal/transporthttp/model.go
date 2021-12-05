@@ -5,10 +5,8 @@ import (
 	paymentsV1 "github.com/jacktantram/payments-api/build/go/shared/payment/v1"
 )
 
-type CreatePaymentRequest struct{
-	PaymentMethod struct{
-		Card *paymentsV1.PaymentMethodCard
-	} `json:"payment_method,paymentMethod"`
+type CreateAuthorizationRequest struct{
+	Card *paymentsV1.PaymentMethodCard
 	Amount amountV1.Money
 }
 
