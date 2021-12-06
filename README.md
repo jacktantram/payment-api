@@ -94,7 +94,6 @@ add in `buf.gen.yaml`
 * Idempotency
     * Ideally an idempotency mechanism would be implemented to prevent clients making duplicate requests. It would also
       cache results of previous calls.
-      https://app.diagrams.net/#G16LSiTc8i5i_N0f7TDqM6yrpQrAbg5AdF
 * Testing
   * Improve service layer tests, ran out of time to cover further edge cases
   * e2e tests
