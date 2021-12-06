@@ -59,7 +59,7 @@ It is structured as follows:
 
 * `/github` - github setup/github actions
 * `/build` - generated files such as protobuf definitions
-* `/docs` - repo related docs
+* `/docs` - repo related docs containing data model & sequence diagrams.
 * `/pkg` - shared libraries for project
 * `/proto` - global protobuf definitions
 * `/services` - containing any microservices
