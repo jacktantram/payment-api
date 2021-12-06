@@ -5,8 +5,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/jacktantram/payments-api/services/payment-gateway/internal/domain"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +16,6 @@ import (
 	"github.com/jacktantram/payments-api/services/payment-gateway/internal/transport/transporthttp/mocks"
 
 	"github.com/golang/mock/gomock"
-	processorv1 "github.com/jacktantram/payments-api/build/go/rpc/paymentprocessor/v1"
 	amountV1 "github.com/jacktantram/payments-api/build/go/shared/amount/v1"
 	paymentsV1 "github.com/jacktantram/payments-api/build/go/shared/payment/v1"
 	uuid "github.com/kevinburke/go.uuid"
@@ -51,7 +49,7 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 		request         transporthttp.CreateAuthorizationRequest
 		expStatusCode   int
 		responseMessage string
-		fn              func(mocks *mocks.MockPaymentProcessorClient)
+		fn              func(mocks *mocks.MockGateway)
 	}{
 		{
 			description: "should return error given that the amount minor units is zero",
@@ -188,10 +186,10 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 				},
 			},
 			responseMessage: "Oops something went wrong",
-			fn: func(mocks *mocks.MockPaymentProcessorClient) {
+			fn: func(mocks *mocks.MockGateway) {
 				mocks.
 					EXPECT().
-					CreatePayment(gomock.Any(), gomock.Any()).
+					CreatePayment(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil, errors.New("an error"))
 			},
 			expStatusCode: http.StatusInternalServerError,
@@ -201,14 +199,14 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			t.Parallel()
 			var (
-				ctrl                = gomock.NewController(t)
-				mockProcessorClient = mocks.NewMockPaymentProcessorClient(ctrl)
+				ctrl        = gomock.NewController(t)
+				mockGateway = mocks.NewMockGateway(ctrl)
 			)
 			if tc.fn != nil {
-				tc.fn(mockProcessorClient)
+				tc.fn(mockGateway)
 			}
 
-			h, err := transporthttp.NewHandler(mockProcessorClient)
+			h, err := transporthttp.NewHandler(mockGateway)
 			require.NoError(t, err)
 			recorder := httptest.NewRecorder()
 
@@ -234,8 +232,8 @@ var (
 func TestHandler_AuthorizeHandler_Success(t *testing.T) {
 	t.Parallel()
 	var (
-		ctrl                = gomock.NewController(t)
-		mockProcessorClient = mocks.NewMockPaymentProcessorClient(ctrl)
+		ctrl        = gomock.NewController(t)
+		mockGateway = mocks.NewMockGateway(ctrl)
 
 		expPayment = &paymentsV1.Payment{
 			Id: uuid.NewV4().String(),
@@ -244,18 +242,16 @@ func TestHandler_AuthorizeHandler_Success(t *testing.T) {
 				Currency:   "GBP",
 			},
 			PaymentStatus: paymentsV1.PaymentStatus_PAYMENT_STATUS_AUTHORIZED,
-			ActionId:      uuid.NewV4().String(),
 			CreatedAt:     timestamppb.Now(),
 			UpdatedAt:     nil,
 		}
 	)
 
-	mockProcessorClient.EXPECT().CreatePayment(gomock.Any(), &processorv1.CreatePaymentRequest{
-		Amount: &amountV1.Money{
-			MinorUnits: 2212,
-			Currency:   "GBP",
-		},
-		PaymentMethod: &processorv1.CreatePaymentRequest_Card{
+	mockGateway.EXPECT().CreatePayment(gomock.Any(), &amountV1.Money{
+		MinorUnits: 2212,
+		Currency:   "GBP",
+	},
+		domain.PaymentMethod{
 			Card: &paymentsV1.PaymentMethodCard{
 				CardNumber: "4000 0000 0000 0119",
 				Expiry: &paymentsV1.PaymentMethodCard_ExpiryDate{
@@ -263,11 +259,10 @@ func TestHandler_AuthorizeHandler_Success(t *testing.T) {
 					Year:  2029,
 				},
 				Cvv: "123",
-			},
-		}}).
-		Return(&processorv1.CreatePaymentResponse{Payment: expPayment}, nil)
+			}}).
+		Return(expPayment, nil)
 
-	h, err := transporthttp.NewHandler(mockProcessorClient)
+	h, err := transporthttp.NewHandler(mockGateway)
 	require.NoError(t, err)
 	recorder := httptest.NewRecorder()
 
@@ -297,7 +292,7 @@ func TestHandler_CaptureHandler_Error(t *testing.T) {
 		request         transporthttp.CreateCaptureRequest
 		expStatusCode   int
 		responseMessage string
-		fn              func(mocks *mocks.MockPaymentProcessorClient)
+		fn              func(mocks *mocks.MockGateway)
 	}{
 		{
 			description: "should return error given that the payment id is empty",
@@ -322,10 +317,10 @@ func TestHandler_CaptureHandler_Error(t *testing.T) {
 			description:     "should return error if unable to create capture",
 			request:         validRequest,
 			responseMessage: "Oops something went wrong",
-			fn: func(mocks *mocks.MockPaymentProcessorClient) {
+			fn: func(mocks *mocks.MockGateway) {
 				mocks.
 					EXPECT().
-					Capture(gomock.Any(), gomock.Any()).
+					Capture(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil, errors.New("an error"))
 			},
 			expStatusCode: http.StatusInternalServerError,
@@ -334,11 +329,11 @@ func TestHandler_CaptureHandler_Error(t *testing.T) {
 			description:     "should return error if unable to payment not found",
 			request:         validRequest,
 			responseMessage: "payment not found",
-			fn: func(mocks *mocks.MockPaymentProcessorClient) {
+			fn: func(mocks *mocks.MockGateway) {
 				mocks.
 					EXPECT().
-					Capture(gomock.Any(), gomock.Any()).
-					Return(nil, status.New(codes.NotFound, "not found").Err())
+					Capture(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, domain.ErrNoPayment)
 			},
 			expStatusCode: http.StatusNotFound,
 		},
@@ -346,11 +341,11 @@ func TestHandler_CaptureHandler_Error(t *testing.T) {
 			description:     "should return error if capture not allowed",
 			request:         validRequest,
 			responseMessage: "capture not allowed",
-			fn: func(mocks *mocks.MockPaymentProcessorClient) {
+			fn: func(mocks *mocks.MockGateway) {
 				mocks.
 					EXPECT().
-					Capture(gomock.Any(), gomock.Any()).
-					Return(nil, status.New(codes.PermissionDenied, "not allowed").Err())
+					Capture(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, domain.ErrNotPermitted)
 			},
 			expStatusCode: http.StatusForbidden,
 		},
@@ -359,14 +354,14 @@ func TestHandler_CaptureHandler_Error(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			t.Parallel()
 			var (
-				ctrl                = gomock.NewController(t)
-				mockProcessorClient = mocks.NewMockPaymentProcessorClient(ctrl)
+				ctrl        = gomock.NewController(t)
+				mockGateway = mocks.NewMockGateway(ctrl)
 			)
 			if tc.fn != nil {
-				tc.fn(mockProcessorClient)
+				tc.fn(mockGateway)
 			}
 
-			h, err := transporthttp.NewHandler(mockProcessorClient)
+			h, err := transporthttp.NewHandler(mockGateway)
 			require.NoError(t, err)
 			recorder := httptest.NewRecorder()
 
@@ -391,8 +386,8 @@ var (
 func TestHandler_CaptureHandler_Success(t *testing.T) {
 	t.Parallel()
 	var (
-		ctrl                = gomock.NewController(t)
-		mockProcessorClient = mocks.NewMockPaymentProcessorClient(ctrl)
+		ctrl        = gomock.NewController(t)
+		mockGateway = mocks.NewMockGateway(ctrl)
 
 		expPayment = &paymentsV1.Payment{
 			Id: uuid.NewV4().String(),
@@ -401,19 +396,15 @@ func TestHandler_CaptureHandler_Success(t *testing.T) {
 				Currency:   "GBP",
 			},
 			PaymentStatus: paymentsV1.PaymentStatus_PAYMENT_STATUS_PARTIALLY_CAPTURED,
-			ActionId:      uuid.NewV4().String(),
 			CreatedAt:     timestamppb.Now(),
 			UpdatedAt:     nil,
 		}
 	)
 
-	mockProcessorClient.EXPECT().Capture(gomock.Any(), &processorv1.CreateCaptureRequest{
-		PaymentId: "a6921fc3-a7e3-4661-909b-b3c6c77837ce",
-		Amount:    2212,
-	}).
-		Return(&processorv1.CreateCaptureResponse{Payment: expPayment}, nil)
+	mockGateway.EXPECT().Capture(gomock.Any(), "a6921fc3-a7e3-4661-909b-b3c6c77837ce", uint64(2212)).
+		Return(expPayment, nil)
 
-	h, err := transporthttp.NewHandler(mockProcessorClient)
+	h, err := transporthttp.NewHandler(mockGateway)
 	require.NoError(t, err)
 	recorder := httptest.NewRecorder()
 
@@ -443,7 +434,7 @@ func TestHandler_RefundHandler_Error(t *testing.T) {
 		request         transporthttp.CreateRefundRequest
 		expStatusCode   int
 		responseMessage string
-		fn              func(mocks *mocks.MockPaymentProcessorClient)
+		fn              func(mocks *mocks.MockGateway)
 	}{
 		{
 			description: "should return error given that the payment id is empty",
@@ -468,10 +459,10 @@ func TestHandler_RefundHandler_Error(t *testing.T) {
 			description:     "should return error if unable to create refund",
 			request:         validRequest,
 			responseMessage: "Oops something went wrong",
-			fn: func(mocks *mocks.MockPaymentProcessorClient) {
+			fn: func(mocks *mocks.MockGateway) {
 				mocks.
 					EXPECT().
-					Refund(gomock.Any(), gomock.Any()).
+					Refund(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil, errors.New("an error"))
 			},
 			expStatusCode: http.StatusInternalServerError,
@@ -480,11 +471,11 @@ func TestHandler_RefundHandler_Error(t *testing.T) {
 			description:     "should return error if unable to payment not found",
 			request:         validRequest,
 			responseMessage: "payment not found",
-			fn: func(mocks *mocks.MockPaymentProcessorClient) {
+			fn: func(mocks *mocks.MockGateway) {
 				mocks.
 					EXPECT().
-					Refund(gomock.Any(), gomock.Any()).
-					Return(nil, status.New(codes.NotFound, "not found").Err())
+					Refund(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, domain.ErrNoPayment)
 			},
 			expStatusCode: http.StatusNotFound,
 		},
@@ -492,11 +483,11 @@ func TestHandler_RefundHandler_Error(t *testing.T) {
 			description:     "should return error if refund not allowed",
 			request:         validRequest,
 			responseMessage: "refund not allowed",
-			fn: func(mocks *mocks.MockPaymentProcessorClient) {
+			fn: func(mocks *mocks.MockGateway) {
 				mocks.
 					EXPECT().
-					Refund(gomock.Any(), gomock.Any()).
-					Return(nil, status.New(codes.PermissionDenied, "not allowed").Err())
+					Refund(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, domain.ErrNotPermitted)
 			},
 			expStatusCode: http.StatusForbidden,
 		},
@@ -505,14 +496,14 @@ func TestHandler_RefundHandler_Error(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			t.Parallel()
 			var (
-				ctrl                = gomock.NewController(t)
-				mockProcessorClient = mocks.NewMockPaymentProcessorClient(ctrl)
+				ctrl        = gomock.NewController(t)
+				mockGateway = mocks.NewMockGateway(ctrl)
 			)
 			if tc.fn != nil {
-				tc.fn(mockProcessorClient)
+				tc.fn(mockGateway)
 			}
 
-			h, err := transporthttp.NewHandler(mockProcessorClient)
+			h, err := transporthttp.NewHandler(mockGateway)
 			require.NoError(t, err)
 			recorder := httptest.NewRecorder()
 
@@ -537,8 +528,8 @@ var (
 func TestHandler_RefundHandler_Success(t *testing.T) {
 	t.Parallel()
 	var (
-		ctrl                = gomock.NewController(t)
-		mockProcessorClient = mocks.NewMockPaymentProcessorClient(ctrl)
+		ctrl        = gomock.NewController(t)
+		mockGateway = mocks.NewMockGateway(ctrl)
 
 		expPayment = &paymentsV1.Payment{
 			Id: uuid.NewV4().String(),
@@ -547,19 +538,15 @@ func TestHandler_RefundHandler_Success(t *testing.T) {
 				Currency:   "GBP",
 			},
 			PaymentStatus: paymentsV1.PaymentStatus_PAYMENT_STATUS_PARTIALLY_REFUNDED,
-			ActionId:      uuid.NewV4().String(),
 			CreatedAt:     timestamppb.Now(),
 			UpdatedAt:     nil,
 		}
 	)
 
-	mockProcessorClient.EXPECT().Refund(gomock.Any(), &processorv1.CreateRefundRequest{
-		PaymentId: "a6921fc3-a7e3-4661-909b-b3c6c77837ce",
-		Amount:    2212,
-	}).
-		Return(&processorv1.CreateRefundResponse{Payment: expPayment}, nil)
+	mockGateway.EXPECT().Refund(gomock.Any(), "a6921fc3-a7e3-4661-909b-b3c6c77837ce", uint64(2212)).
+		Return(expPayment, nil)
 
-	h, err := transporthttp.NewHandler(mockProcessorClient)
+	h, err := transporthttp.NewHandler(mockGateway)
 	require.NoError(t, err)
 	recorder := httptest.NewRecorder()
 
@@ -588,7 +575,7 @@ func TestHandler_VoidHandler_Error(t *testing.T) {
 		request         transporthttp.CreateVoidRequest
 		expStatusCode   int
 		responseMessage string
-		fn              func(mocks *mocks.MockPaymentProcessorClient)
+		fn              func(mocks *mocks.MockGateway)
 	}{
 		{
 			description: "should return error given that the payment id is empty",
@@ -603,7 +590,7 @@ func TestHandler_VoidHandler_Error(t *testing.T) {
 			description:     "should return error if unable to perform void",
 			request:         validRequest,
 			responseMessage: "Oops something went wrong",
-			fn: func(mocks *mocks.MockPaymentProcessorClient) {
+			fn: func(mocks *mocks.MockGateway) {
 				mocks.
 					EXPECT().
 					Void(gomock.Any(), gomock.Any()).
@@ -615,11 +602,11 @@ func TestHandler_VoidHandler_Error(t *testing.T) {
 			description:     "should return error if unable to payment not found",
 			request:         validRequest,
 			responseMessage: "payment not found",
-			fn: func(mocks *mocks.MockPaymentProcessorClient) {
+			fn: func(mocks *mocks.MockGateway) {
 				mocks.
 					EXPECT().
 					Void(gomock.Any(), gomock.Any()).
-					Return(nil, status.New(codes.NotFound, "not found").Err())
+					Return(nil, domain.ErrNoPayment)
 			},
 			expStatusCode: http.StatusNotFound,
 		},
@@ -627,11 +614,11 @@ func TestHandler_VoidHandler_Error(t *testing.T) {
 			description:     "should return error if void not allowed",
 			request:         validRequest,
 			responseMessage: "void not allowed",
-			fn: func(mocks *mocks.MockPaymentProcessorClient) {
+			fn: func(mocks *mocks.MockGateway) {
 				mocks.
 					EXPECT().
 					Void(gomock.Any(), gomock.Any()).
-					Return(nil, status.New(codes.PermissionDenied, "not allowed").Err())
+					Return(nil, domain.ErrNotPermitted)
 			},
 			expStatusCode: http.StatusForbidden,
 		},
@@ -640,14 +627,14 @@ func TestHandler_VoidHandler_Error(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			t.Parallel()
 			var (
-				ctrl                = gomock.NewController(t)
-				mockProcessorClient = mocks.NewMockPaymentProcessorClient(ctrl)
+				ctrl        = gomock.NewController(t)
+				mockGateway = mocks.NewMockGateway(ctrl)
 			)
 			if tc.fn != nil {
-				tc.fn(mockProcessorClient)
+				tc.fn(mockGateway)
 			}
 
-			h, err := transporthttp.NewHandler(mockProcessorClient)
+			h, err := transporthttp.NewHandler(mockGateway)
 			require.NoError(t, err)
 			recorder := httptest.NewRecorder()
 
@@ -671,8 +658,8 @@ var (
 func TestHandler_VoidHandler_Success(t *testing.T) {
 	t.Parallel()
 	var (
-		ctrl                = gomock.NewController(t)
-		mockProcessorClient = mocks.NewMockPaymentProcessorClient(ctrl)
+		ctrl        = gomock.NewController(t)
+		mockGateway = mocks.NewMockGateway(ctrl)
 
 		expPayment = &paymentsV1.Payment{
 			Id: uuid.NewV4().String(),
@@ -681,18 +668,15 @@ func TestHandler_VoidHandler_Success(t *testing.T) {
 				Currency:   "GBP",
 			},
 			PaymentStatus: paymentsV1.PaymentStatus_PAYMENT_STATUS_VOIDED,
-			ActionId:      uuid.NewV4().String(),
 			CreatedAt:     timestamppb.Now(),
 			UpdatedAt:     nil,
 		}
 	)
 
-	mockProcessorClient.EXPECT().Void(gomock.Any(), &processorv1.CreateVoidRequest{
-		PaymentId: "a6921fc3-a7e3-4661-909b-b3c6c77837ce",
-	}).
-		Return(&processorv1.CreateVoidResponse{Payment: expPayment}, nil)
+	mockGateway.EXPECT().Void(gomock.Any(), "a6921fc3-a7e3-4661-909b-b3c6c77837ce").
+		Return(expPayment, nil)
 
-	h, err := transporthttp.NewHandler(mockProcessorClient)
+	h, err := transporthttp.NewHandler(mockGateway)
 	require.NoError(t, err)
 	recorder := httptest.NewRecorder()
 

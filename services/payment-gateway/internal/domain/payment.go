@@ -9,35 +9,51 @@ import (
 )
 
 var (
-	ErrPaymentCreateActionDoesNotExist = errors.New("action does not exist to create payment with")
+	ErrNoPaymentForAction = errors.New("payment does not exist to create payment with")
 
-	// could add different errors for amount too high
-	ErrInvalidAmount = errors.New("amount is invalid")
 	ErrUnprocessable = errors.New("unprocessable entity")
 
 	ErrUpdatePaymentOutcome = errors.New("unable to update payment outcome")
 
-	ErrNoPayment = errors.New("no payment found")
+	ErrNoPayment    = errors.New("no payment found")
+	ErrNotPermitted = errors.New("not permitted")
 )
 
 type PaymentAction struct {
-	ID           uuid.UUID    `db:"id"`
-	Amount       int64        `db:"amount"`
-	PaymentType  PaymentType  `db:"payment_type"`
-	ResponseCode string       `db:"response_code"`
-	CreatedAt    time.Time    `db:"created_at"`
-	ProcessedAt  sql.NullTime `db:"processed_at"`
+	ID           uuid.UUID      `db:"id"`
+	Amount       int64          `db:"amount"`
+	PaymentType  PaymentType    `db:"payment_type"`
+	ResponseCode sql.NullString `db:"response_code"`
+	PaymentID    uuid.UUID      `db:"payment_id"`
+	CreatedAt    time.Time      `db:"created_at"`
+	ProcessedAt  sql.NullTime   `db:"processed_at"`
 }
 
-type Payment struct {
-	ID        uuid.UUID     `db:"id"`
-	Amount    int64         `db:"amount"`
-	Currency  string        `db:"currency"`
-	Status    PaymentStatus `db:"status"`
-	ActionID  uuid.UUID     `db:"action_id"`
-	CreatedAt time.Time     `db:"created_at"`
-	UpdatedAt sql.NullTime  `db:"updated_at"`
+type ListPaymentActionFilters struct {
+	PaymentIDs []string
 }
+
+type UpdatePaymentActionField int
+
+const (
+	UpdatePaymentActionFieldResponseCode UpdatePaymentActionField = 0
+)
+
+type Payment struct {
+	ID         uuid.UUID     `db:"id"`
+	Amount     int64         `db:"amount"`
+	Currency   string        `db:"currency"`
+	Status     PaymentStatus `db:"status"`
+	CardNumber string        `db:"card_number"`
+	CreatedAt  time.Time     `db:"created_at"`
+	UpdatedAt  sql.NullTime  `db:"updated_at"`
+}
+
+type UpdatePaymentField int
+
+const (
+	UpdatePaymentFieldStatus UpdatePaymentField = 0
+)
 
 type PaymentMethod struct {
 	Card *paymentsV1.PaymentMethodCard
@@ -53,6 +69,7 @@ const (
 	PaymentStatusRefunded          PaymentStatus = "REFUNDED"
 	PaymentStatusPartiallyRefunded PaymentStatus = "PARTIALLY_REFUNDED"
 	PaymentStatusVoided            PaymentStatus = "VOIDED"
+	PaymentStatusDeclined          PaymentStatus = "DECLINED"
 )
 
 func (p *PaymentStatus) FromProto(paymentStatus paymentsV1.PaymentStatus) error {
@@ -71,6 +88,8 @@ func (p *PaymentStatus) FromProto(paymentStatus paymentsV1.PaymentStatus) error 
 		*p = PaymentStatusPartiallyRefunded
 	case paymentsV1.PaymentStatus_PAYMENT_STATUS_VOIDED:
 		*p = PaymentStatusVoided
+	case paymentsV1.PaymentStatus_PAYMENT_STATUS_DECLINED:
+		*p = PaymentStatusDeclined
 	default:
 		return errors.New("unknown")
 	}
@@ -93,6 +112,8 @@ func (p PaymentStatus) ToProto() paymentsV1.PaymentStatus {
 		return paymentsV1.PaymentStatus_PAYMENT_STATUS_REFUNDED
 	case PaymentStatusVoided:
 		return paymentsV1.PaymentStatus_PAYMENT_STATUS_VOIDED
+	case PaymentStatusDeclined:
+		return paymentsV1.PaymentStatus_PAYMENT_STATUS_DECLINED
 	}
 	return paymentsV1.PaymentStatus_PAYMENT_STATUS_UNSPECIFIED
 }

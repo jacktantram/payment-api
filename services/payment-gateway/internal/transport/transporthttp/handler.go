@@ -1,20 +1,20 @@
-//go:generate mockgen --destination=mocks/mock_processor.go -package=mocks github.com/jacktantram/payments-api/build/go/rpc/paymentprocessor/v1 PaymentProcessorClient
+//go:generate mockgen -source=handler.go -destination=mocks/mock_gateway.go -package=mocks
 package transporthttp
 
 import (
+	"context"
 	"encoding/json"
+	amountV1 "github.com/jacktantram/payments-api/build/go/shared/amount/v1"
+	paymentsV1 "github.com/jacktantram/payments-api/build/go/shared/payment/v1"
+	"github.com/jacktantram/payments-api/services/payment-gateway/internal/domain"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"net/http"
 	"strings"
 	"time"
-
-	processorv1 "github.com/jacktantram/payments-api/build/go/rpc/paymentprocessor/v1"
 )
 
 const (
@@ -34,19 +34,22 @@ func HandleRoutes(h Handler) *mux.Router {
 	return r
 }
 
-type Gateway interface{
-
+type Gateway interface {
+	CreatePayment(ctx context.Context, amount *amountV1.Money, method domain.PaymentMethod) (*paymentsV1.Payment, error)
+	Capture(ctx context.Context, paymentID string, amount uint64) (*paymentsV1.Payment, error)
+	Refund(ctx context.Context, paymentID string, amount uint64) (*paymentsV1.Payment, error)
+	Void(ctx context.Context, paymentID string) (*paymentsV1.Payment, error)
 }
 
 type Handler struct {
-	processorClient processorv1.PaymentProcessorClient
+	gateway Gateway
 }
 
-func NewHandler(processorClient processorv1.PaymentProcessorClient) (Handler, error) {
+func NewHandler(processorClient Gateway) (Handler, error) {
 	if processorClient == nil {
 		return Handler{}, errors.New("gateway client is nil")
 	}
-	return Handler{processorClient: processorClient}, nil
+	return Handler{gateway: processorClient}, nil
 }
 
 func (h Handler) AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
@@ -108,18 +111,16 @@ func (h Handler) AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fn := func() error {
-		paymentResponse, err := h.processorClient.CreatePayment(r.Context(), &processorv1.CreatePaymentRequest{
-			Amount:        authorizationRequest.Amount,
-			PaymentMethod: &processorv1.CreatePaymentRequest_Card{Card: authorizationRequest.Card},
-		})
+		paymentResponse, err := h.gateway.CreatePayment(r.Context(), authorizationRequest.Amount, domain.PaymentMethod{Card: authorizationRequest.Card})
 		if err != nil {
 			return err
 		}
-		paymentBytes, err := protojson.Marshal(paymentResponse.GetPayment())
+		paymentBytes, err := protojson.Marshal(paymentResponse)
 		if err != nil {
-			logFields["payment.id"] = paymentResponse.Payment.Id
+			logFields["payment.id"] = paymentResponse.Id
 			return err
 		}
+		w.Header().Set("Content-Type", "application/json")
 		_, err = w.Write(paymentBytes)
 		if err != nil {
 			return err
@@ -168,17 +169,16 @@ func (h Handler) CaptureHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fn := func() error {
-		captureResponse, err := h.processorClient.Capture(r.Context(), &processorv1.CreateCaptureRequest{
-			PaymentId: captureRequest.PaymentID,
-			Amount:    captureRequest.Amount,
-		})
+		captureResponse, err := h.gateway.Capture(r.Context(), captureRequest.PaymentID, captureRequest.Amount)
 		if err != nil {
 			return err
 		}
-		paymentBytes, err := protojson.Marshal(captureResponse.GetPayment())
+
+		paymentBytes, err := protojson.Marshal(captureResponse)
 		if err != nil {
 			return err
 		}
+		w.Header().Set("Content-Type", "application/json")
 		_, err = w.Write(paymentBytes)
 		if err != nil {
 			return err
@@ -187,17 +187,17 @@ func (h Handler) CaptureHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := fn(); err != nil {
-		switch status.Convert(err).Code() {
-		case codes.NotFound:
+		if errors.Is(err, domain.ErrNoPayment) {
 			http.Error(w, "payment not found", http.StatusNotFound)
 			return
-		case codes.PermissionDenied:
-			http.Error(w, "capture not allowed", http.StatusForbidden)
-		default:
-			logFields["error"] = err
-			log.WithFields(logFields).Error("failed to process capture request")
-			http.Error(w, "Oops something went wrong", http.StatusInternalServerError)
 		}
+		if errors.Is(err, domain.ErrNotPermitted) {
+			http.Error(w, "capture not allowed", http.StatusForbidden)
+			return
+		}
+		logFields["error"] = err
+		log.WithFields(logFields).Error("failed to process capture request")
+		http.Error(w, "Oops something went wrong", http.StatusInternalServerError)
 		return
 	}
 }
@@ -235,17 +235,15 @@ func (h Handler) RefundHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fn := func() error {
-		refundResponse, err := h.processorClient.Refund(r.Context(), &processorv1.CreateRefundRequest{
-			PaymentId: refundRequest.PaymentID,
-			Amount:    refundRequest.Amount,
-		})
+		refundResponse, err := h.gateway.Refund(r.Context(), refundRequest.PaymentID, refundRequest.Amount)
 		if err != nil {
 			return err
 		}
-		paymentBytes, err := protojson.Marshal(refundResponse.GetPayment())
+		paymentBytes, err := protojson.Marshal(refundResponse)
 		if err != nil {
 			return err
 		}
+		w.Header().Set("Content-Type", "application/json")
 		_, err = w.Write(paymentBytes)
 		if err != nil {
 			return err
@@ -254,17 +252,17 @@ func (h Handler) RefundHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := fn(); err != nil {
-		switch status.Convert(err).Code() {
-		case codes.NotFound:
+		if errors.Is(err, domain.ErrNoPayment) {
 			http.Error(w, "payment not found", http.StatusNotFound)
 			return
-		case codes.PermissionDenied:
-			http.Error(w, "refund not allowed", http.StatusForbidden)
-		default:
-			logFields["error"] = err
-			log.WithFields(logFields).Error("failed to process refund request")
-			http.Error(w, "Oops something went wrong", http.StatusInternalServerError)
 		}
+		if errors.Is(err, domain.ErrNotPermitted) {
+			http.Error(w, "refund not allowed", http.StatusForbidden)
+			return
+		}
+		logFields["error"] = err
+		log.WithFields(logFields).Error("failed to process refund request")
+		http.Error(w, "Oops something went wrong", http.StatusInternalServerError)
 		return
 	}
 }
@@ -298,16 +296,15 @@ func (h Handler) VoidHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fn := func() error {
-		voidResponse, err := h.processorClient.Void(r.Context(), &processorv1.CreateVoidRequest{
-			PaymentId: voidRequest.PaymentID,
-		})
+		voidResponse, err := h.gateway.Void(r.Context(), voidRequest.PaymentID)
 		if err != nil {
 			return err
 		}
-		paymentBytes, err := protojson.Marshal(voidResponse.GetPayment())
+		paymentBytes, err := protojson.Marshal(voidResponse)
 		if err != nil {
 			return err
 		}
+		w.Header().Set("Content-Type", "application/json")
 		_, err = w.Write(paymentBytes)
 		if err != nil {
 			return err
@@ -316,17 +313,17 @@ func (h Handler) VoidHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := fn(); err != nil {
-		switch status.Convert(err).Code() {
-		case codes.NotFound:
+		if errors.Is(err, domain.ErrNoPayment) {
 			http.Error(w, "payment not found", http.StatusNotFound)
 			return
-		case codes.PermissionDenied:
-			http.Error(w, "void not allowed", http.StatusForbidden)
-		default:
-			logFields["error"] = err
-			log.WithFields(logFields).Error("failed to process void request")
-			http.Error(w, "Oops something went wrong", http.StatusInternalServerError)
 		}
+		if errors.Is(err, domain.ErrNotPermitted) {
+			http.Error(w, "void not allowed", http.StatusForbidden)
+			return
+		}
+		logFields["error"] = err
+		log.WithFields(logFields).Error("failed to process void request")
+		http.Error(w, "Oops something went wrong", http.StatusInternalServerError)
 		return
 	}
 }

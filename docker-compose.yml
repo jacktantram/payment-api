@@ -15,9 +15,3 @@ services:
       dockerfile: services/payment-gateway/Dockerfile
     ports:
       - "8080:8080"
-  payment_processor:
-    build:
-      context: .
-      dockerfile: services/payment-processor/Dockerfile
-    ports:
-      - "50051:50051"

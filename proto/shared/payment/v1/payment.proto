@@ -16,12 +16,15 @@ message Payment{
   shared.amount.v1.Money amount = 2;
   // The status of the payment/
   PaymentStatus payment_status = 3;
-  // The linking action id to the payment. See PaymentAction.
-  string action_id = 4;
+  // The payment will be linked to one kind of payment method
+  oneof payment_method{
+    // card payment method type for authorization
+    shared.payment.v1.PaymentMethodCard card = 5;
+  }
   // The date the payment was created.
-  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp created_at = 6;
   // The date the payment was updated.
-  google.protobuf.Timestamp updated_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
 }
 
 

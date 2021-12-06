@@ -15,10 +15,12 @@ message PaymentAction{
   PaymentType payment_type = 3;
   // ISO-1987 response code
   string response_code = 4;
+  // The payment linked to the action.
+  string payment_id = 5;
   // The time in which the action was created.
-  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp created_at = 6;
   // The time in which the action was successfully processed.
-  google.protobuf.Timestamp processed_at = 6;
+  google.protobuf.Timestamp processed_at = 7;
 }
 
 // The type of the payment.

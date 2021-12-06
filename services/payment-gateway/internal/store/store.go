@@ -16,6 +16,7 @@ type conn interface {
 	Queryx(query string, args ...interface{}) (*sqlx.Rows, error)
 	NamedQueryContext(ctx context.Context, query string, arg interface{}) (*sqlx.Rows, error)
 	NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error)
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 
 func NewStore(db postgres.Client) Store {
