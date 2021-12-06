@@ -19,9 +19,6 @@ import (
 // Cfg represents the services config
 type Cfg struct {
 	config.HTTPConfig
-	Hostnames struct {
-		PaymentProcessor string `envconfig:"PAYMENT_PROCESSOR_HOSTNAME"`
-	}
 	DatabaseURI   string `envconfig:"DATABASE_URI"`
 	MigrationPath string `envconfig:"MIGRATION_PATH" default:"/migrations"`
 }
