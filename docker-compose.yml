@@ -13,5 +13,7 @@ services:
     build:
       context: .
       dockerfile: services/payment-gateway/Dockerfile
+    env_file:
+      - 'dev.env'
     ports:
       - "8080:8080"

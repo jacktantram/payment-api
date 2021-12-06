@@ -69,5 +69,10 @@ Notes
     * If more time would have written table driven tests to tidy up tests.
     * Storing card information should really be in encrypted storage
       like [Hashicorp Vault](https://www.vaultproject.io/)
-
-https://app.diagrams.net/#G16LSiTc8i5i_N0f7TDqM6yrpQrAbg5AdF
+* Metrics
+    * To add metrics I would look at adding promhttp to be able to instrument the HTTP handler. This would enable
+      dashboards to be built to track things like latency and number of requests
+* Idempotency
+    * Ideally a idempotency mechanism would be implemented to prevent clients making duplicate requests. It would also
+      cache results of previous calls.
+      https://app.diagrams.net/#G16LSiTc8i5i_N0f7TDqM6yrpQrAbg5AdF
