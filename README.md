@@ -55,13 +55,11 @@ Notes
 ## Considerations
 
 * Authorize Endpoint
-    * In order to authorize requests the card information is sent across to trigger payments. For now I have chosen to
-      only store the first six and last four in the database as a reference. If there was a requirement to persist this
-      I would look at tokenizing the card and persisting it in encrypted storage like
-      [Hashicorp Vault](https://www.vaultproject.io/)
 
 ## Improvements
 
+* Move payment update/processing code out of main flow. This could be done asynchronously to avoid the chance of not
+  writing to db. When a payment is created an event is produced and it is processed separately.
 * Protobuf
     * CI - Responsible for protobuf generation to ensure no compatibility/versioning issues across machines.
     * `WIRE_JSON` - In order to share the protobuf schemas and avoid duplication I added the WIRE_JSON check. This was
@@ -69,5 +67,7 @@ Notes
       benefit from WIRE changes.
 * Database
     * If more time would have written table driven tests to tidy up tests.
+    * Storing card information should really be in encrypted storage
+      like [Hashicorp Vault](https://www.vaultproject.io/)
 
 https://app.diagrams.net/#G16LSiTc8i5i_N0f7TDqM6yrpQrAbg5AdF

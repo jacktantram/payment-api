@@ -5,10 +5,9 @@ skinparam ParticipantPadding 20
 skinparam BoxPadding 20
 actor merchant
 
-participant paymentGateway as "payment-gateway"
 
-box "Payment Processor"
-participant paymentProcessor as "payment-processor"
+box "Payment Gateway"
+participant paymentGateway as "payment-gateway"
 database payments as paymentsDB
 end box
 participant issuerGateway as "issuer-gateway"
@@ -18,37 +17,32 @@ paymentGateway->paymentGateway: validate request
 alt invalid request
 paymentGateway->merchant: return BadRequest
 end alt
-paymentGateway-> paymentProcessor: Authorize
-paymentProcessor->paymentsDB: Create Pending Authorization
+paymentGateway->paymentsDB: Create Pending Authorization + action
 alt creation fails
-paymentProcessor<-paymentsDB: return error
-paymentProcessor->paymentGateway: Return Internal error
+paymentGateway<-paymentsDB: return error
+paymentGateway->paymentGateway: Return Internal error
 paymentGateway->merchant: Return Internal error
 end alt
-paymentProcessor<-paymentsDB: Return OK
-paymentProcessor-> issuerGateway: CreateIssuerRequest
+paymentGateway<-paymentsDB: Return OK
+paymentGateway-> issuerGateway: CreateIssuerRequest
 alt Issuer error
-paymentProcessor<-issuerGateway: Internal error/ unhandled error
-paymentProcessor->paymentsDB: Update Payment to Authorized/Declined depending on issuer response
+paymentGateway<-issuerGateway: Internal error/ unhandled error
+paymentGateway->paymentsDB: Update Payment to Authorized/Declined depending on issuer response
 alt DB Write fails
-paymentProcessor<-paymentsDB: return error
-paymentProcessor->paymentProcessor: log error (trigger alert)
-paymentGateway<-paymentProcessor: return InternalError
+paymentGateway<-paymentsDB: return error
+paymentGateway->paymentGateway: log error (trigger alert)
 paymentGateway->merchant: return InternalError
 end alt
-paymentProcessor<-paymentsDB: Return ok
-paymentGateway<-paymentProcessor: return InternalError
+paymentGateway<-paymentsDB: Return ok
 paymentGateway->merchant: return InternalError
 end alt
-paymentProcessor<-issuerGateway: Return ok
-paymentProcessor->paymentsDB: Update Payment to Authorized/Declined depending on issuer response
+paymentGateway<-issuerGateway: Return ok
+paymentGateway->paymentsDB: Update Payment to Authorized/Declined depending on issuer response
 alt DB Write Fails
-paymentProcessor<-paymentsDB: return error
-paymentProcessor->paymentProcessor: log error (trigger alert)
-paymentGateway<-paymentProcessor: return Accepted
+paymentGateway<-paymentsDB: return error
+paymentGateway->paymentGateway: log error (trigger alert)
 paymentGateway->merchant: return 201
 end alt
-paymentProcessor<-paymentsDB: Return ok
-paymentGateway<-paymentProcessor: Return ok
+paymentGateway<-paymentsDB: Return ok
 paymentGateway->merchant: Return 201
 @enduml

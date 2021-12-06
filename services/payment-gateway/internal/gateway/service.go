@@ -1,3 +1,5 @@
+//go:generate mockgen -source=service.go -destination=mocks/mocks.go -package=mocks
+
 package gateway
 
 import (
@@ -84,7 +86,7 @@ func (s Service) CreatePayment(ctx context.Context, amount *amountV1.Money, meth
 		} else {
 			payment.PaymentStatus = paymentsV1.PaymentStatus_PAYMENT_STATUS_DECLINED
 		}
-		if err = s.store.UpdatePayment(ctx, payment, domain.UpdatePaymentFieldStatus); err != nil {
+		if err := s.store.UpdatePayment(ctx, payment, domain.UpdatePaymentFieldStatus); err != nil {
 			return err
 		}
 		return nil
