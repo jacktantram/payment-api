@@ -33,7 +33,7 @@ func (c Client) Migrate(migratePath string) error {
 		return err
 	}
 	m, err := migrate.NewWithDatabaseInstance(
-		fmt.Sprintf("file:///%s", migratePath),
+		fmt.Sprintf("file://%s", migratePath),
 		c.dBName, driver)
 	if err != nil {
 		return err
