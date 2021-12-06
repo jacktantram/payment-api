@@ -1,5 +1,5 @@
 //go:generate mockgen --destination=mocks/mock_processor.go -package=mocks github.com/jacktantram/payments-api/build/go/rpc/paymentprocessor/v1 PaymentProcessorClient
-package handler
+package transporthttp
 
 import (
 	"encoding/json"
@@ -34,13 +34,17 @@ func HandleRoutes(h Handler) *mux.Router {
 	return r
 }
 
+type Gateway interface{
+
+}
+
 type Handler struct {
 	processorClient processorv1.PaymentProcessorClient
 }
 
 func NewHandler(processorClient processorv1.PaymentProcessorClient) (Handler, error) {
 	if processorClient == nil {
-		return Handler{}, errors.New("processor client is nil")
+		return Handler{}, errors.New("gateway client is nil")
 	}
 	return Handler{processorClient: processorClient}, nil
 }

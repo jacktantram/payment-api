@@ -4,7 +4,7 @@ package store_test
 
 import (
 	"github.com/jacktantram/payments-api/pkg/driver/v1/postgres"
-	"github.com/jacktantram/payments-api/services/payment-processor/internal/store"
+	"github.com/jacktantram/payments-api/services/payment-gateway/internal/store"
 	"os"
 	"testing"
 )

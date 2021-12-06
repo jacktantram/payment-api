@@ -1,11 +1,11 @@
-package processor
+package gateway
 
 import (
 	"context"
 	processorv1 "github.com/jacktantram/payments-api/build/go/rpc/paymentprocessor/v1"
 	amountV1 "github.com/jacktantram/payments-api/build/go/shared/amount/v1"
 	paymentsV1 "github.com/jacktantram/payments-api/build/go/shared/payment/v1"
-	"github.com/jacktantram/payments-api/services/payment-processor/internal/domain"
+	"github.com/jacktantram/payments-api/services/payment-gateway/internal/domain"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 )
@@ -40,16 +40,15 @@ func NewService(store Store, gateway IssuerGateway) Service {
 	return s
 }
 
-func (s Service) CreatePayment(ctx context.Context, request *processorv1.CreatePaymentRequest) (*processorv1.CreatePaymentResponse, error) {
+func (s Service) CreatePayment(ctx context.Context, amount *amountV1.Money, method domain.PaymentMethod) (*processorv1.CreatePaymentResponse, error) {
 	paymentType := paymentsV1.PaymentType_PAYMENT_TYPE_AUTHORIZATION
 	var (
 		payment       *paymentsV1.Payment
 		paymentAction *paymentsV1.PaymentAction
-		amount        = request.GetAmount().GetMinorUnits()
 	)
 	if err := s.store.ExecInTransaction(ctx, func(ctx context.Context) error {
 		paymentAction = &paymentsV1.PaymentAction{
-			Amount:      amount,
+			Amount:      amount.MinorUnits,
 			PaymentType: paymentType,
 		}
 		if err := s.store.CreatePaymentAction(ctx, paymentAction); err != nil {
@@ -57,7 +56,7 @@ func (s Service) CreatePayment(ctx context.Context, request *processorv1.CreateP
 		}
 
 		payment = &paymentsV1.Payment{
-			Amount:        request.GetAmount(),
+			Amount:        amount,
 			PaymentStatus: paymentsV1.PaymentStatus_PAYMENT_STATUS_PENDING,
 		}
 		if err := s.store.CreatePayment(ctx, payment); err != nil {
@@ -68,16 +67,13 @@ func (s Service) CreatePayment(ctx context.Context, request *processorv1.CreateP
 		return nil, err
 	}
 
-	issuerRequest := domain.IssuerRequest{
-		Amount:        request.GetAmount(),
-		OperationType: paymentType,
-	}
-	if cardMethod := request.GetPaymentMethod().(*processorv1.CreatePaymentRequest_Card); cardMethod != nil {
-		issuerRequest.PaymentMethod.Card = cardMethod.Card
-	}
+	issuerRequest :=
 
 	// If more time would have done this part asynchronously from a PaymentCreatedEvent.
-	issuerResponse, err := s.issuerGateway.CreateIssuerRequest(ctx, issuerRequest)
+	issuerResponse, err := s.issuerGateway.CreateIssuerRequest(ctx, domain.IssuerRequest{
+		Amount:        amount,
+		OperationType: paymentType,
+		PaymentMethod: method})
 	if err != nil {
 		return nil, err
 	}

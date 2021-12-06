@@ -6,7 +6,7 @@ import (
 	processorv1 "github.com/jacktantram/payments-api/build/go/rpc/paymentprocessor/v1"
 	amountV1 "github.com/jacktantram/payments-api/build/go/shared/amount/v1"
 	paymentsV1 "github.com/jacktantram/payments-api/build/go/shared/payment/v1"
-	"github.com/jacktantram/payments-api/services/payment-processor/internal/domain"
+	"github.com/jacktantram/payments-api/services/payment-gateway/internal/domain"
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/kevinburke/go.uuid"
 	"github.com/lib/pq"

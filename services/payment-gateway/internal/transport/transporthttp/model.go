@@ -1,4 +1,4 @@
-package handler
+package transporthttp
 
 import (
 	amountV1 "github.com/jacktantram/payments-api/build/go/shared/amount/v1"

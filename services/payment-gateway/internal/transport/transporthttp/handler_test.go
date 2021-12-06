@@ -1,4 +1,4 @@
-package handler_test
+package transporthttp_test
 
 import (
 	"bytes"
@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jacktantram/payments-api/services/payment-gateway/internal/handler"
-	"github.com/jacktantram/payments-api/services/payment-gateway/internal/handler/mocks"
+	"github.com/jacktantram/payments-api/services/payment-gateway/internal/transport/transporthttp"
+	"github.com/jacktantram/payments-api/services/payment-gateway/internal/transport/transporthttp/mocks"
 
 	"github.com/golang/mock/gomock"
 	processorv1 "github.com/jacktantram/payments-api/build/go/rpc/paymentprocessor/v1"
@@ -30,11 +30,11 @@ import (
 func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 	t.Parallel()
 	var (
-		validRequest = handler.CreateAuthorizationRequest{
+		validRequest = transporthttp.CreateAuthorizationRequest{
 			Card: &paymentsV1.PaymentMethodCard{
 				CardNumber: "4000000000000119",
 				Expiry: &paymentsV1.PaymentMethodCard_ExpiryDate{
-					Month: handler.ExpiryMonLen,
+					Month: transporthttp.ExpiryMonLen,
 					Year:  uint32(time.Now().Year() + 1),
 				},
 				Cvv: "123",
@@ -48,14 +48,14 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 
 	for _, tc := range []struct {
 		description     string
-		request         handler.CreateAuthorizationRequest
+		request         transporthttp.CreateAuthorizationRequest
 		expStatusCode   int
 		responseMessage string
 		fn              func(mocks *mocks.MockPaymentProcessorClient)
 	}{
 		{
 			description: "should return error given that the amount minor units is zero",
-			request: handler.CreateAuthorizationRequest{
+			request: transporthttp.CreateAuthorizationRequest{
 				Card: &paymentsV1.PaymentMethodCard{
 					CardNumber: validRequest.Card.CardNumber,
 					Expiry:     validRequest.Card.Expiry,
@@ -71,7 +71,7 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 		},
 		{
 			description: "should return error given that the amount currency is not a valid length",
-			request: handler.CreateAuthorizationRequest{
+			request: transporthttp.CreateAuthorizationRequest{
 				Card: &paymentsV1.PaymentMethodCard{
 					CardNumber: validRequest.Card.CardNumber,
 					Expiry:     validRequest.Card.Expiry,
@@ -87,7 +87,7 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 		},
 		{
 			description: "should return error given that the card number is not a valid length",
-			request: handler.CreateAuthorizationRequest{
+			request: transporthttp.CreateAuthorizationRequest{
 				Card: &paymentsV1.PaymentMethodCard{
 					CardNumber: "12",
 					Expiry:     validRequest.Card.Expiry,
@@ -103,7 +103,7 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 		},
 		{
 			description: "should return error given that the card cvv is not a valid length",
-			request: handler.CreateAuthorizationRequest{
+			request: transporthttp.CreateAuthorizationRequest{
 				Card: &paymentsV1.PaymentMethodCard{
 					CardNumber: validRequest.Card.CardNumber,
 					Expiry:     validRequest.Card.Expiry,
@@ -119,7 +119,7 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 		},
 		{
 			description: "should return error given that the card expiry is not provided",
-			request: handler.CreateAuthorizationRequest{
+			request: transporthttp.CreateAuthorizationRequest{
 				Card: &paymentsV1.PaymentMethodCard{
 					CardNumber: validRequest.Card.CardNumber,
 					Expiry:     nil,
@@ -135,7 +135,7 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 		},
 		{
 			description: "should return error given that the card expiry months exceeds 12",
-			request: handler.CreateAuthorizationRequest{
+			request: transporthttp.CreateAuthorizationRequest{
 				Card: &paymentsV1.PaymentMethodCard{
 					CardNumber: validRequest.Card.CardNumber,
 					Expiry: &paymentsV1.PaymentMethodCard_ExpiryDate{
@@ -154,7 +154,7 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 		},
 		{
 			description: "should return error given that the card expiry is before current year",
-			request: handler.CreateAuthorizationRequest{
+			request: transporthttp.CreateAuthorizationRequest{
 				Card: &paymentsV1.PaymentMethodCard{
 					CardNumber: validRequest.Card.CardNumber,
 					Expiry: &paymentsV1.PaymentMethodCard_ExpiryDate{
@@ -173,7 +173,7 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 		},
 		{
 			description: "should return error if unable to create payment",
-			request: handler.CreateAuthorizationRequest{
+			request: transporthttp.CreateAuthorizationRequest{
 				Card: &paymentsV1.PaymentMethodCard{
 					CardNumber: validRequest.Card.CardNumber,
 					Expiry: &paymentsV1.PaymentMethodCard_ExpiryDate{
@@ -208,7 +208,7 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 				tc.fn(mockProcessorClient)
 			}
 
-			h, err := handler.NewHandler(mockProcessorClient)
+			h, err := transporthttp.NewHandler(mockProcessorClient)
 			require.NoError(t, err)
 			recorder := httptest.NewRecorder()
 
@@ -267,7 +267,7 @@ func TestHandler_AuthorizeHandler_Success(t *testing.T) {
 		}}).
 		Return(&processorv1.CreatePaymentResponse{Payment: expPayment}, nil)
 
-	h, err := handler.NewHandler(mockProcessorClient)
+	h, err := transporthttp.NewHandler(mockProcessorClient)
 	require.NoError(t, err)
 	recorder := httptest.NewRecorder()
 
@@ -286,7 +286,7 @@ func TestHandler_AuthorizeHandler_Success(t *testing.T) {
 func TestHandler_CaptureHandler_Error(t *testing.T) {
 	t.Parallel()
 	var (
-		validRequest = handler.CreateCaptureRequest{
+		validRequest = transporthttp.CreateCaptureRequest{
 			PaymentID: uuid.NewV4().String(),
 			Amount:    3020,
 		}
@@ -294,14 +294,14 @@ func TestHandler_CaptureHandler_Error(t *testing.T) {
 
 	for _, tc := range []struct {
 		description     string
-		request         handler.CreateCaptureRequest
+		request         transporthttp.CreateCaptureRequest
 		expStatusCode   int
 		responseMessage string
 		fn              func(mocks *mocks.MockPaymentProcessorClient)
 	}{
 		{
 			description: "should return error given that the payment id is empty",
-			request: handler.CreateCaptureRequest{
+			request: transporthttp.CreateCaptureRequest{
 				PaymentID: "",
 				Amount:    validRequest.Amount,
 			},
@@ -311,7 +311,7 @@ func TestHandler_CaptureHandler_Error(t *testing.T) {
 		},
 		{
 			description: "should return error given that the amount is zero",
-			request: handler.CreateCaptureRequest{
+			request: transporthttp.CreateCaptureRequest{
 				PaymentID: validRequest.PaymentID,
 				Amount:    0,
 			},
@@ -366,7 +366,7 @@ func TestHandler_CaptureHandler_Error(t *testing.T) {
 				tc.fn(mockProcessorClient)
 			}
 
-			h, err := handler.NewHandler(mockProcessorClient)
+			h, err := transporthttp.NewHandler(mockProcessorClient)
 			require.NoError(t, err)
 			recorder := httptest.NewRecorder()
 
@@ -413,7 +413,7 @@ func TestHandler_CaptureHandler_Success(t *testing.T) {
 	}).
 		Return(&processorv1.CreateCaptureResponse{Payment: expPayment}, nil)
 
-	h, err := handler.NewHandler(mockProcessorClient)
+	h, err := transporthttp.NewHandler(mockProcessorClient)
 	require.NoError(t, err)
 	recorder := httptest.NewRecorder()
 
@@ -432,7 +432,7 @@ func TestHandler_CaptureHandler_Success(t *testing.T) {
 func TestHandler_RefundHandler_Error(t *testing.T) {
 	t.Parallel()
 	var (
-		validRequest = handler.CreateRefundRequest{
+		validRequest = transporthttp.CreateRefundRequest{
 			PaymentID: uuid.NewV4().String(),
 			Amount:    3020,
 		}
@@ -440,14 +440,14 @@ func TestHandler_RefundHandler_Error(t *testing.T) {
 
 	for _, tc := range []struct {
 		description     string
-		request         handler.CreateRefundRequest
+		request         transporthttp.CreateRefundRequest
 		expStatusCode   int
 		responseMessage string
 		fn              func(mocks *mocks.MockPaymentProcessorClient)
 	}{
 		{
 			description: "should return error given that the payment id is empty",
-			request: handler.CreateRefundRequest{
+			request: transporthttp.CreateRefundRequest{
 				PaymentID: "",
 				Amount:    validRequest.Amount,
 			},
@@ -457,7 +457,7 @@ func TestHandler_RefundHandler_Error(t *testing.T) {
 		},
 		{
 			description: "should return error given that the amount is zero",
-			request: handler.CreateRefundRequest{
+			request: transporthttp.CreateRefundRequest{
 				PaymentID: validRequest.PaymentID,
 				Amount:    0,
 			},
@@ -512,7 +512,7 @@ func TestHandler_RefundHandler_Error(t *testing.T) {
 				tc.fn(mockProcessorClient)
 			}
 
-			h, err := handler.NewHandler(mockProcessorClient)
+			h, err := transporthttp.NewHandler(mockProcessorClient)
 			require.NoError(t, err)
 			recorder := httptest.NewRecorder()
 
@@ -559,7 +559,7 @@ func TestHandler_RefundHandler_Success(t *testing.T) {
 	}).
 		Return(&processorv1.CreateRefundResponse{Payment: expPayment}, nil)
 
-	h, err := handler.NewHandler(mockProcessorClient)
+	h, err := transporthttp.NewHandler(mockProcessorClient)
 	require.NoError(t, err)
 	recorder := httptest.NewRecorder()
 
@@ -578,21 +578,21 @@ func TestHandler_RefundHandler_Success(t *testing.T) {
 func TestHandler_VoidHandler_Error(t *testing.T) {
 	t.Parallel()
 	var (
-		validRequest = handler.CreateVoidRequest{
+		validRequest = transporthttp.CreateVoidRequest{
 			PaymentID: uuid.NewV4().String(),
 		}
 	)
 
 	for _, tc := range []struct {
 		description     string
-		request         handler.CreateVoidRequest
+		request         transporthttp.CreateVoidRequest
 		expStatusCode   int
 		responseMessage string
 		fn              func(mocks *mocks.MockPaymentProcessorClient)
 	}{
 		{
 			description: "should return error given that the payment id is empty",
-			request: handler.CreateVoidRequest{
+			request: transporthttp.CreateVoidRequest{
 				PaymentID: "",
 			},
 
@@ -647,7 +647,7 @@ func TestHandler_VoidHandler_Error(t *testing.T) {
 				tc.fn(mockProcessorClient)
 			}
 
-			h, err := handler.NewHandler(mockProcessorClient)
+			h, err := transporthttp.NewHandler(mockProcessorClient)
 			require.NoError(t, err)
 			recorder := httptest.NewRecorder()
 
@@ -692,7 +692,7 @@ func TestHandler_VoidHandler_Success(t *testing.T) {
 	}).
 		Return(&processorv1.CreateVoidResponse{Payment: expPayment}, nil)
 
-	h, err := handler.NewHandler(mockProcessorClient)
+	h, err := transporthttp.NewHandler(mockProcessorClient)
 	require.NoError(t, err)
 	recorder := httptest.NewRecorder()
 
