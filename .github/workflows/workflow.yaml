@@ -1,9 +1,25 @@
 on: push
 name: Payments API # First time writing github actions
 jobs:
+
   build:
     runs-on: ubuntu-latest
     name: Build
+    services:
+      # label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres:10.5
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v2
       - name: Setup go
