@@ -105,3 +105,5 @@ add in `buf.gen.yaml`
     so that they can be scaled independently and horizontally.
   * Monitors setup to track service health such as `/health`, `/metrics` endpoint as well
     as business metrics where alerts can be triggered.
+* CI
+  * CI isn't currently working due to billing I need to setup
