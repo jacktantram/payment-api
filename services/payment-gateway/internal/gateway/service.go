@@ -124,21 +124,24 @@ func (s Service) Capture(ctx context.Context, paymentID string, amount uint64) (
 
 		}
 
-		actions, err := s.store.ListPaymentActions(ctx, &domain.ListPaymentActionFilters{PaymentIDs: []string{paymentID}})
-		if err != nil {
-			return err
-		}
+		if payment.PaymentStatus == paymentsV1.PaymentStatus_PAYMENT_STATUS_PARTIALLY_CAPTURED {
+			actions, err := s.store.ListPaymentActions(ctx, &domain.ListPaymentActionFilters{PaymentIDs: []string{paymentID}})
+			if err != nil {
+				return err
+			}
 
-		for _, action := range actions {
-			if issuerSuccess(action.ResponseCode) {
-				if action.PaymentType == paymentsV1.PaymentType_PAYMENT_TYPE_CAPTURE {
-					sumAction += action.Amount
+			for _, action := range actions {
+				if issuerSuccess(action.ResponseCode) {
+					if action.PaymentType == paymentsV1.PaymentType_PAYMENT_TYPE_CAPTURE {
+						sumAction += action.Amount
+					}
 				}
 			}
+			if amount > payment.Amount.MinorUnits-sumAction {
+				return domain.ErrNotPermitted
+			}
 		}
-		if amount > payment.Amount.MinorUnits-sumAction {
-			return domain.ErrNotPermitted
-		}
+
 		paymentAction = &paymentsV1.PaymentAction{
 			Amount:      amount,
 			PaymentType: paymentType,
@@ -182,6 +185,7 @@ func (s Service) Capture(ctx context.Context, paymentID string, amount uint64) (
 		}
 		return nil
 	}); err != nil {
+
 		// will need to alert on this as payment was successful
 		return nil, errors.Wrap(domain.ErrUpdatePaymentOutcome, err.Error())
 	}
@@ -225,7 +229,7 @@ func (s Service) Refund(ctx context.Context, paymentID string, amount uint64) (*
 				}
 			}
 		}
-		if amount > sumAction {
+		if amount > sumAction && sumAction > 0 {
 			return domain.ErrNotPermitted
 		}
 		paymentAction = &paymentsV1.PaymentAction{
