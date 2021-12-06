@@ -84,7 +84,7 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 			expStatusCode:   http.StatusUnprocessableEntity,
 		},
 		{
-			description: "should return error given that the card number is not a valid length",
+			description: "should return error given that the card number is invalid",
 			request: transporthttp.CreateAuthorizationRequest{
 				Card: &paymentsV1.PaymentMethodCard{
 					CardNumber: "12",
@@ -96,7 +96,7 @@ func TestHandler_AuthorizeHandler_Error(t *testing.T) {
 					Currency:   validRequest.Amount.Currency,
 				},
 			},
-			responseMessage: "invalid payment_method.card.card_number: length not equal to 16",
+			responseMessage: "invalid payment_method.card.card_number: invalid card number",
 			expStatusCode:   http.StatusUnprocessableEntity,
 		},
 		{

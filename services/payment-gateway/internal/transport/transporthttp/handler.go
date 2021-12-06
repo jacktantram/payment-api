@@ -13,15 +13,13 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/encoding/protojson"
 	"net/http"
-	"strings"
 	"time"
 )
 
 const (
-	CardNumberLen = 16
-	CVVLen        = 3
-	CurrencyLen   = 3
-	ExpiryMonLen  = 12
+	CVVLen       = 3
+	CurrencyLen  = 3
+	ExpiryMonLen = 12
 )
 
 func HandleRoutes(h Handler) *mux.Router {
@@ -78,8 +76,8 @@ func (h Handler) AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
 		if authorizationRequest.Card == nil {
 			return errors.New("missing payment method: cannot be empty")
 		}
-		if len(authorizationRequest.Card.CardNumber) != CardNumberLen && len(strings.ReplaceAll(authorizationRequest.Card.CardNumber, " ", "")) != CardNumberLen {
-			return errors.Errorf("invalid payment_method.card.card_number: length not equal to %d", CardNumberLen)
+		if !domain.ValidCardNumber(authorizationRequest.Card.CardNumber) {
+			return errors.New("invalid payment_method.card.card_number: invalid card number")
 		}
 		if len(authorizationRequest.Card.Cvv) != CVVLen {
 			return errors.Errorf("invalid payment_method.card.cvv: length not equal to %d", 3)
