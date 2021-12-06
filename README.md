@@ -68,6 +68,14 @@ It is structured as follows:
 All services in `/service` directory should be containerised using Docker.
 In order to spin up infrastructure run `make run`.
 
+### Makefile
+* `make lint` - run linter across project
+* `make proto-generate`-protobuf generation
+* `make build` - build containers
+* `make run` - to run services
+* `make test` - executes tests
+* `make test-integration` - executes integration tests
+
 ### Protobuf
 In order to generate definitions run `make proto-generate`. This will
 generate code for languages specified in `buf.gen.yaml` based on

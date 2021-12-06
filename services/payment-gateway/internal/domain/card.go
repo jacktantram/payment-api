@@ -11,7 +11,7 @@ import (
 // https://en.wikipedia.org/wiki/Luhn_algorithm
 func ValidCardNumber(number string) bool {
 	number = strings.ReplaceAll(number, " ", "")
-	if len(number) != 16 {
+	if len(number) > 16 {
 		return false
 	}
 	digits := make([]int, len(number))
