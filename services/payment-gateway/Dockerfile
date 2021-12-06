@@ -14,6 +14,7 @@ WORKDIR /
 COPY --from=builder app app
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY services/payment-gateway/config.yaml config.yaml
+COPY services/payment-gateway/internal/migrations migrations/
 
 EXPOSE 8080
-CMD ["./app"]
+ENTRYPOINT ["./app"]
